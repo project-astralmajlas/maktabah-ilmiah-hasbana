@@ -1,0 +1,6 @@
+{
+  "name": "Maktabah Ilmiah Hasbana",
+  "description": "Platform perpustakaan digital dan sistem manajemen konten (CMS) Maktabah Ilmiah Hasbana: modul tematik, katalog e-book & buku fisik, audiobook player, peminjaman, serta panel admin.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
