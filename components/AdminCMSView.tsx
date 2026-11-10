@@ -24,8 +24,12 @@ import {
   Clock,
   CheckCircle2,
   HelpCircle,
-  FileText
+  FileText,
+  Globe,
+  RefreshCw
 } from 'lucide-react';
+import confetti from 'canvas-confetti';
+import { INITIAL_BOOKS } from '@/lib/initialData';
 import { 
   BookItem, 
   ModuleItem, 
@@ -70,7 +74,29 @@ export const AdminCMSView: React.FC<AdminCMSViewProps> = ({
   onImportData,
   onResetData
 }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'books' | 'modules' | 'loans' | 'members' | 'announcements' | 'backup'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'books' | 'modules' | 'loans' | 'members' | 'announcements' | 'welib_sync' | 'backup'>('dashboard');
+
+  const handleSyncWeLibAll = () => {
+    const currentIds = new Set(books.map(b => b.id));
+    const newToAdd = INITIAL_BOOKS.filter(b => !currentIds.has(b.id));
+    if (newToAdd.length === 0) {
+      alert('Seluruh buku dari repositori id.welib.st sudah ada dalam katalog Anda.');
+      return;
+    }
+    const updated = [...books, ...newToAdd];
+    onSaveBooks(updated);
+    if (typeof window !== 'undefined') {
+      confetti({ particleCount: 70, spread: 60 });
+    }
+  };
+
+  const handleImportSingleBook = (bookToAdd: BookItem) => {
+    if (books.some(b => b.id === bookToAdd.id)) return;
+    onSaveBooks([bookToAdd, ...books]);
+    if (typeof window !== 'undefined') {
+      confetti({ particleCount: 40, spread: 50 });
+    }
+  };
 
   // Book Modal state
   const [bookModalOpen, setBookModalOpen] = useState(false);
@@ -481,6 +507,15 @@ export const AdminCMSView: React.FC<AdminCMSViewProps> = ({
         </button>
 
         <button
+          onClick={() => setActiveTab('welib_sync')}
+          className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 whitespace-nowrap ${
+            activeTab === 'welib_sync' ? 'bg-white text-emerald-800 shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <Globe className="w-4 h-4 text-emerald-600" /> Repositori id.welib.st
+        </button>
+
+        <button
           onClick={() => setActiveTab('backup')}
           className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 whitespace-nowrap ${
             activeTab === 'backup' ? 'bg-white text-teal-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
@@ -877,6 +912,136 @@ export const AdminCMSView: React.FC<AdminCMSViewProps> = ({
                 </button>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* TAB: SINKRONISASI REPOSITORI ID.WELIB.ST */}
+      {activeTab === 'welib_sync' && (
+        <div className="space-y-6">
+          {/* Header Banner */}
+          <div className="bg-gradient-to-r from-[#092c32] via-[#0c3942] to-[#134e5a] p-6 sm:p-7 rounded-3xl text-white border border-teal-500/40 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div className="space-y-2 max-w-2xl">
+              <div className="inline-flex items-center gap-2 bg-emerald-400/20 text-emerald-300 border border-emerald-400/30 px-3 py-0.5 rounded-full text-xs font-semibold">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                Repositori Digital Terpadu: id.welib.st
+              </div>
+              <h2 className="text-xl sm:text-2xl font-black">
+                Sinkronisasi Database Koleksi Buku id.welib.st
+              </h2>
+              <p className="text-xs sm:text-sm text-teal-100/90 leading-relaxed">
+                Database ini memuat kurasi koleksi buku digital, novel sastra Indonesia terpopuler, karya klasik, sains modern, psikologi best-seller, serta khazanah keilmuan yang terindeks di jaringan WeLib Indonesia.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-2 w-full md:w-auto">
+              <button
+                onClick={handleSyncWeLibAll}
+                className="px-5 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-teal-900/50 hover:scale-105"
+              >
+                <RefreshCw className="w-4 h-4" /> Impor & Sinkron Semua ({INITIAL_BOOKS.length} Buku)
+              </button>
+            </div>
+          </div>
+
+          {/* Metric Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+              <div>
+                <p className="text-xs text-slate-400 uppercase font-semibold">Tersedia di Repositori WeLib</p>
+                <p className="text-2xl font-black text-slate-900 mt-1">{INITIAL_BOOKS.length} Judul</p>
+              </div>
+              <span className="p-3 bg-teal-50 text-teal-800 rounded-xl">
+                <Globe className="w-6 h-6" />
+              </span>
+            </div>
+
+            <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+              <div>
+                <p className="text-xs text-slate-400 uppercase font-semibold">Telah Masuk ke Maktabah</p>
+                <p className="text-2xl font-black text-emerald-700 mt-1">
+                  {books.filter(b => INITIAL_BOOKS.some(ib => ib.id === b.id)).length} Judul
+                </p>
+              </div>
+              <span className="p-3 bg-emerald-50 text-emerald-800 rounded-xl">
+                <CheckCircle2 className="w-6 h-6" />
+              </span>
+            </div>
+
+            <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+              <div>
+                <p className="text-xs text-slate-400 uppercase font-semibold">Siap Diimpor Baru</p>
+                <p className="text-2xl font-black text-amber-600 mt-1">
+                  {INITIAL_BOOKS.filter(ib => !books.some(b => b.id === ib.id)).length} Judul
+                </p>
+              </div>
+              <span className="p-3 bg-amber-50 text-amber-700 rounded-xl">
+                <Download className="w-6 h-6" />
+              </span>
+            </div>
+          </div>
+
+          {/* Book Repository Grid */}
+          <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div>
+                <h3 className="font-bold text-slate-900 text-base">Daftar Koleksi Buku Repositori id.welib.st</h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Klik &quot;Impor ke Katalog&quot; pada judul mana pun untuk menambahkannya langsung ke katalog aktif Maktabah Ilmiah Hasbana.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
+              {INITIAL_BOOKS.map(ib => {
+                const isAlreadyImported = books.some(b => b.id === ib.id);
+
+                return (
+                  <div 
+                    key={ib.id} 
+                    className="p-4 rounded-2xl border border-slate-200/90 bg-slate-50/50 hover:bg-white hover:shadow-md transition-all flex gap-3.5 items-start justify-between"
+                  >
+                    <img
+                      src={ib.coverImage}
+                      alt={ib.title}
+                      className="w-16 h-22 object-cover rounded-xl shadow-sm flex-shrink-0"
+                    />
+
+                    <div className="flex-1 overflow-hidden space-y-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-teal-100 text-teal-800">
+                          {ib.format}
+                        </span>
+                        <span className="text-[10px] text-slate-500 bg-slate-200/70 px-1.5 py-0.5 rounded">
+                          {ib.level}
+                        </span>
+                      </div>
+
+                      <h4 className="font-bold text-sm text-slate-900 leading-snug line-clamp-1" title={ib.title}>
+                        {ib.title}
+                      </h4>
+                      <p className="text-xs text-slate-600 truncate">{ib.author}</p>
+                      <p className="text-[11px] text-slate-400 font-mono">DDC: {ib.ddc}</p>
+
+                      <div className="pt-2">
+                        {isAlreadyImported ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg">
+                            <Check className="w-3 h-3" /> Sudah Ada di Katalog
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => handleImportSingleBook(ib)}
+                            className="inline-flex items-center gap-1 text-[11px] font-bold text-white bg-teal-800 hover:bg-teal-900 px-3 py-1 rounded-lg transition-colors shadow-xs"
+                          >
+                            <Download className="w-3 h-3" /> Impor ke Katalog
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}

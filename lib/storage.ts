@@ -38,7 +38,23 @@ export function setStoredData<T>(key: string, value: T): void {
 }
 
 export function getBooks(): BookItem[] {
-  return getStoredData<BookItem[]>(STORAGE_KEYS.BOOKS, INITIAL_BOOKS);
+  const stored = getStoredData<BookItem[]>(STORAGE_KEYS.BOOKS, INITIAL_BOOKS);
+  if (stored && stored.length > 0) {
+    const storedIds = new Set(stored.map(b => b.id));
+    const missing = INITIAL_BOOKS.filter(b => !storedIds.has(b.id));
+    if (missing.length > 0) {
+      const merged = [...stored, ...missing];
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem(STORAGE_KEYS.BOOKS, JSON.stringify(merged));
+        } catch (e) {
+          console.error('Error saving merged books', e);
+        }
+      }
+      return merged;
+    }
+  }
+  return stored;
 }
 
 export function saveBooks(books: BookItem[]) {
@@ -46,7 +62,23 @@ export function saveBooks(books: BookItem[]) {
 }
 
 export function getModules(): ModuleItem[] {
-  return getStoredData<ModuleItem[]>(STORAGE_KEYS.MODULES, INITIAL_MODULES);
+  const stored = getStoredData<ModuleItem[]>(STORAGE_KEYS.MODULES, INITIAL_MODULES);
+  if (stored && stored.length > 0) {
+    const storedIds = new Set(stored.map(m => m.id));
+    const missing = INITIAL_MODULES.filter(m => !storedIds.has(m.id));
+    if (missing.length > 0) {
+      const merged = [...stored, ...missing];
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem(STORAGE_KEYS.MODULES, JSON.stringify(merged));
+        } catch (e) {
+          console.error('Error saving merged modules', e);
+        }
+      }
+      return merged;
+    }
+  }
+  return stored;
 }
 
 export function saveModules(modules: ModuleItem[]) {
